@@ -25,7 +25,7 @@
         (function(jQuery, Firebase, Path) {
             "use strict";
             function authDataCallback(authData) {
-                if ("uid" in authData) {
+                if (authData) {
                   window.userID = authData.uid;
                 }
                 console.log(authData);
