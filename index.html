@@ -25,6 +25,7 @@
         (function(jQuery, Firebase, Path) {
             "use strict";
             function authDataCallback(authData) {
+                window.userID = authData.uid;
                 console.log(authData);
                 setTimeout(function() {
               if (authData) {
@@ -417,7 +418,8 @@
                     console.log('saving');
                     playsets.push({
                         'name': $("#playset_name_input").val(),
-                        "code": $("#playset_code_input").val()
+                        "code": $("#playset_code_input").val(),
+                        "created_by": window.userID
                     });
                 });
                 playsets.on("value", function(snapshot) {
