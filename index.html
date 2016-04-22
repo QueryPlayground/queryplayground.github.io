@@ -418,11 +418,13 @@
                 
                 $('#save_playset').click(function() {
                     console.log('saving');
-                    playsets.push({
+                    var newPlaysetRef = playsets.push({
                         'name': $("#playset_name_input").val(),
                         "code": $("#playset_code_input").val(),
                         "created_by": window.userID
                     });
+                    var playsetID = newPlaysetRef.key();
+                    window.location.hash = '/playset/'+paysetID;
                 });
                 playsets.on("value", function(snapshot) {
                     $.each(Object.keys(snapshot.val()), function(i, key) {
