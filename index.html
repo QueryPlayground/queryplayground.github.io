@@ -1,1 +1,729 @@
-<h1>QueryPlayground</h1>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>QueryPlayground: Because querying data should be fun</title>
+
+    <script src="https://cdn.firebase.com/js/client/2.2.1/firebase.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+    <script src="https://www.atlasestateagents.co.uk/javascript/tether.min.js"></script>
+    <!-- Tether for Bootstrap -->
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" />
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet" />
+
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-serialize-object/2.0.0/jquery.serialize-object.compiled.js"></script>
+
+
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/path.js/0.8.4/path.min.js"></script>
+    <script>
+        (function(jQuery, Firebase, Path) {
+            "use strict";
+            function authDataCallback(authData) {
+                console.log(authData);
+                setTimeout(function() {
+              if (authData) {
+                $('#logout_buttons').show();
+                $('#login_buttons').hide();
+              } else {
+                $('#login_buttons').show();
+                $('#logout_buttons').hide();
+                  console.log($('#logout_buttons').length);
+              }
+                },1000);
+            }
+            // the main firebase reference
+            var rootRef = new Firebase('https://shining-inferno-2045.firebaseio.com/web/uauth');
+            var playsets = new Firebase('https://shining-inferno-2045.firebaseio.com/playsets');
+            rootRef.onAuth(authDataCallback);
+            // pair our routes to our form elements and controller
+            var routeMap = {
+                '#/': {
+                    form: 'frmLogin',
+                    controller: 'login'
+                },
+                '#/logout': {
+                    form: 'frmLogout',
+                    controller: 'logout'
+                },
+                '#/register': {
+                    form: 'frmRegister',
+                    controller: 'register'
+                },
+                '#/profile': {
+                    form: 'frmProfile',
+                    controller: 'profile',
+                    authRequired: true // must be logged in to get here
+                },
+                '#/playset/:playset_id': {
+                    controller: 'playset'
+                },
+                '#/create_playset': {
+                    form: 'create_playset_form',
+                    controller: 'create_playset',
+                    authRequired: true // must be logged in to get here
+                },
+                
+            };
+
+            // create the object to store our controllers
+            var controllers = {};
+
+            // store the active form shown on the page
+            var activeForm = null;
+
+            var alertBox = $('#alert');
+
+            function routeTo(route) {
+                window.location.href = '#/' + route;
+            }
+
+            // Handle third party login providers
+            // returns a promise
+            function thirdPartyLogin(provider) {
+                var deferred = $.Deferred();
+
+                rootRef.authWithOAuthPopup(provider, function(err, user) {
+                    if (err) {
+                        deferred.reject(err);
+                    }
+
+                    if (user) {
+                        deferred.resolve(user);
+                    }
+                });
+
+                return deferred.promise();
+            };
+
+            // Handle Email/Password login
+            // returns a promise
+            function authWithPassword(userObj) {
+                var deferred = $.Deferred();
+                console.log(userObj);
+                rootRef.authWithPassword(userObj, function onAuth(err, user) {
+                    if (err) {
+                        deferred.reject(err);
+                    }
+
+                    if (user) {
+                        deferred.resolve(user);
+                    }
+
+                });
+
+                return deferred.promise();
+            }
+
+            // create a user but not login
+            // returns a promsie
+            function createUser(userObj) {
+                var deferred = $.Deferred();
+                rootRef.createUser(userObj, function(err) {
+
+                    if (!err) {
+                        deferred.resolve();
+                    } else {
+                        deferred.reject(err);
+                    }
+
+                });
+
+                return deferred.promise();
+            }
+
+            // Create a user and then login in
+            // returns a promise
+            function createUserAndLogin(userObj) {
+                return createUser(userObj)
+                    .then(function() {
+                        return authWithPassword(userObj);
+                    });
+            }
+
+            // authenticate anonymously
+            // returns a promise
+            function authAnonymously() {
+                var deferred = $.Deferred();
+                rootRef.authAnonymously(function(err, authData) {
+
+                    if (authData) {
+                        deferred.resolve(authData);
+                    }
+
+                    if (err) {
+                        deferred.reject(err);
+                    }
+
+                });
+
+                return deferred.promise();
+            }
+
+            // route to the specified route if sucessful
+            // if there is an error, show the alert
+            function handleAuthResponse(promise, route) {
+                $.when(promise)
+                    .then(function(authData) {
+
+                        // route
+                        routeTo(route);
+
+                    }, function(err) {
+                        console.log(err);
+                        // pop up error
+                        showAlert({
+                            title: err.code,
+                            detail: err.message,
+                            className: 'alert-danger'
+                        });
+
+                    });
+            }
+
+            // options for showing the alert box
+            function showAlert(opts) {
+                var title = opts.title;
+                var detail = opts.detail;
+                var className = 'alert ' + opts.className;
+
+                alertBox.removeClass().addClass(className);
+                alertBox.children('#alert-title').text(title);
+                alertBox.children('#alert-detail').text(detail);
+            }
+
+            /// Controllers
+            ////////////////////////////////////////
+            
+            controllers.create_playset = function(form) {
+            }
+            controllers.login = function(form) {
+
+                // Form submission for logging in
+                form.on('submit', function(e) {
+
+                    var userAndPass = $(this).serializeObject();
+                    var loginPromise = authWithPassword(userAndPass);
+                    e.preventDefault();
+
+                    handleAuthResponse(loginPromise, 'profile');
+
+                });
+
+                // Social buttons
+                $('.bt-social').on('click', function(e) {
+
+                    var $currentButton = $(this);
+                    var provider = $currentButton.data('provider');
+                    var socialLoginPromise;
+                    e.preventDefault();
+
+                    socialLoginPromise = thirdPartyLogin(provider);
+                    handleAuthResponse(socialLoginPromise, 'profile');
+
+                });
+
+                form.children('#btAnon').on('click', function(e) {
+                    e.preventDefault();
+                    handleAuthResponse(authAnonymously(), 'profilex');
+                });
+
+            };
+
+            // logout immediately when the controller is invoked
+            controllers.logout = function(form) {
+                rootRef.unauth();
+            };
+
+            controllers.register = function(form) {
+
+                // Form submission for registering
+                form.on('submit', function(e) {
+
+                    var userAndPass = $(this).serializeObject();
+                    var loginPromise = createUserAndLogin(userAndPass);
+                    e.preventDefault();
+
+                    handleAuthResponse(loginPromise, 'profile');
+
+                });
+
+            };
+
+            controllers.profile = function(form) {
+                // Check the current user
+                var user = rootRef.getAuth();
+                var userRef;
+
+                // If no current user send to register page
+                if (!user) {
+                    routeTo('register');
+                    return;
+                }
+
+                // Load user info
+                userRef = rootRef.child('users').child(user.uid);
+                userRef.once('value', function(snap) {
+                    var user = snap.val();
+                    console.log(snap.val());
+                    if (!user) {
+                        return;
+                    }
+
+                    // set the fields
+                    $('#txtName').val(user.name);
+                    $('#ddlDino').val(user.favoriteDinosaur);
+                });
+
+                // Save user's info to Firebase
+                form.on('submit', function(e) {
+                    e.preventDefault();
+                    var userInfo = $(this).serializeObject();
+
+                    userRef.set(userInfo, function onComplete() {
+
+                        // show the message if write is successful
+                        showAlert({
+                            title: 'Successfully saved!',
+                            detail: 'You are still logged in',
+                            className: 'alert-success'
+                        });
+
+                    });
+                });
+
+            };
+            function loadPlayset() {
+                var key = window.location.hash.slice('#/playset/'.length);
+                //key = key.slice(1);
+                //console.log(key);
+                playsets.once("value", function(snapshot) {
+                    var playset = snapshot.val()[key];
+                    //var playset = snapshot.child(key); // child key didn't work but should. need it to work
+                    $('#playset_name').text(playset['name']);
+                    $('#playset_code').text(playset['code']);
+                    $('#change_playset_name').val(playset['name']);
+                    $('#change_playset_code').val(playset['code']);
+                    var html = '';
+                    html += `%3Cscript%20src%3D%22https%3A%2F%2Fcdn.firebase.com%2Fjs%2Fclient%2F2.2.1%2Ffirebase.js%22%3E%3C%2Fscript%3E%0D%0A%20%20%20%20%3Cscript%20src%3D%22https%3A%2F%2Fajax.googleapis.com%2Fajax%2Flibs%2Fjquery%2F1.11.1%2Fjquery.min.js%22%3E%3C%2Fscript%3E%0D%0A%20%20%20%20%20%20%20%20%0D%0A%3Cscript%20src%3D%22https%3A%2F%2Fwww.atlasestateagents.co.uk%2Fjavascript%2Ftether.min.js%22%3E%3C%2Fscript%3E%3C%21--%20Tether%20for%20Bootstrap%20--%3E%20%0D%0A%0D%0A%20%20%3Clink%20rel%3D%22stylesheet%22%20href%3D%22https%3A%2F%2Fmaxcdn.bootstrapcdn.com%2Fbootstrap%2F4.0.0-alpha.2%2Fcss%2Fbootstrap.min.css%22%20%2F%3E%0D%0A%20%20%3Clink%20href%3D%22https%3A%2F%2Fmaxcdn.bootstrapcdn.com%2Ffont-awesome%2F4.3.0%2Fcss%2Ffont-awesome.min.css%22%20rel%3D%22stylesheet%22%20%2F%3E`;
+                    // I was getting illegal token error and only thing that fixed it was breaking < out on its own
+                    html += encodeURI('<script src="');
+                    html += encodeURI('https://fixspd.org/js/webmaster_toolkit_for_socrata.js">') + encodeURI('<') + encodeURI('/script>') + encodeURI(playset['code']);
+                    console.log(encodeURI(html));
+                    $('#playset_iframe_container').html('<iframe src="data:text/html;charset=utf-8,' + html + '"></iframe>');
+                });
+                //var playset = playsets.child('test');
+
+    
+            }
+            controllers.playset = function() {
+
+                loadPlayset();
+            }
+            /// Routing
+            ////////////////////////////////////////
+
+            // Handle transitions between routes
+            function transitionRoute(path) {
+                // grab the config object to get the form element and controller
+                var formRoute = routeMap[path];
+                var currentUser = rootRef.getAuth();
+
+                // if authentication is required and there is no
+                // current user then go to the register page and
+                // stop executing
+                if (formRoute.authRequired && !currentUser) {
+                    routeTo('register');
+                    return;
+                }
+
+                // wrap the upcoming form in jQuery
+                var upcomingForm = $('#' + formRoute.form);
+
+                // if there is no active form then make the current one active
+                if (!activeForm) {
+                    activeForm = upcomingForm;
+                }
+
+                // hide old form and show new form
+                activeForm.hide();
+                upcomingForm.show().hide().fadeIn(750);
+
+                // remove any listeners on the soon to be switched form
+                activeForm.off();
+
+                // set the new form as the active form
+                activeForm = upcomingForm;
+
+                // invoke the controller
+                controllers[formRoute.controller](activeForm);
+            }
+
+            // Set up the transitioning of the route
+            function prepRoute() {
+                transitionRoute(this.path);
+            }
+
+
+            /// Routes
+            ///  #/         - Login
+            //   #/logout   - Logut
+            //   #/register - Register
+            //   #/profile  - Profile
+
+            Path.map("#/").to(prepRoute);
+            Path.map("#/logout").to(prepRoute);
+            Path.map("#/register").to(prepRoute);
+            Path.map("#/profile").to(prepRoute);
+            Path.map("#/playset/:playset_id").to(prepRoute);
+            Path.map("#/create_playset").to(prepRoute);
+            Path.root("#/");
+
+            /// Initialize
+            ////////////////////////////////////////
+
+            $(function() {
+
+                // Start the router
+                Path.listen();
+
+                // whenever authentication happens send a popup
+                rootRef.onAuth(function globalOnAuth(authData) {
+
+                    if (authData) {
+                        showAlert({
+                            title: 'Logged in!',
+                            detail: 'Using ' + authData.provider,
+                            className: 'alert-success'
+                        });
+                    } else {
+                        showAlert({
+                            title: 'You are not logged in',
+                            detail: '',
+                            className: 'alert-info'
+                        });
+                    }
+
+                });
+                
+
+                
+                $('#save_playset').click(function() {
+                    console.log('saving');
+                    playsets.push({
+                        'name': $("#playset_name_input").val(),
+                        "code": $("#playset_code_input").val()
+                    });
+                });
+                playsets.on("value", function(snapshot) {
+                    $.each(Object.keys(snapshot.val()), function(i, key) {
+                        if ($('#link_to_playset_' + key).length == 0) {
+                            $('#playsets').append('<li><a href="#/playset/' + key + '" id="link_to_playset_' + key + '">' + snapshot.val()[key]['name'] + '</a></li>');
+                        }
+                    });
+                }, function(errorObject) {
+                    console.log("The read failed: " + errorObject.code);
+                });
+                
+                $('#main').width($(window).width() - 200);
+                $('#delete_playset').click(function() {
+                    console.log('deleting playset');
+                    var key = window.location.hash.slice('#/playset/'.length);
+                    var playset = new Firebase('https://shining-inferno-2045.firebaseio.com/playsets/' + key);
+                    playset.remove();
+                    window.location = '/';
+                });
+                $('.playset_data').click(function() {
+                    $('#change_playset_' + $(this).attr('data-column')).show();
+                });
+                $('.change_playset_data').keypress(function(e) {
+                    if (e.which == 13) {
+                        var key = window.location.hash.slice('#/playset/'.length);
+                        var playset = new Firebase('https://shining-inferno-2045.firebaseio.com/playsets/' + key);
+                        var d = {};
+                        d[$(this).attr('data-column')] = $(this).val();
+                        playset.update(d);
+                        $(this).hide();
+                        loadPlayset();
+                        return false; //<---- Add this line
+                    }
+                });
+
+            });
+
+        }(window.jQuery, window.Firebase, window.Path))
+    </script>
+    <style>
+        .navbar-default {
+  background-color: #e67e22;
+  border-color: #d35400;
+}
+.navbar-default .navbar-brand {
+  color: #ecf0f1;
+}
+.navbar-default .navbar-brand:hover, .navbar-default .navbar-brand:focus {
+  color: #ffe6d1;
+}
+.navbar-default .navbar-nav > li > a {
+  color: #ecf0f1;
+}
+.navbar-default .navbar-nav > li > a:hover, .navbar-default .navbar-nav > li > a:focus {
+  color: #ffe6d1;
+}
+.navbar-default .navbar-nav .active > a, .navbar-default .navbar-nav .active > a:hover, .navbar-default .navbar-nav .active > a:focus {
+  color: #ffe6d1;
+  background-color: #d35400;
+}
+.navbar-default .navbar-nav .open > a, .navbar-default .navbar-nav .open > a:hover, .navbar-default .navbar-nav .open > a:focus {
+  color: #ffe6d1;
+  background-color: #d35400;
+}
+.navbar-default .navbar-nav .open > a .caret, .navbar-default .navbar-nav .open > a:hover .caret, .navbar-default .navbar-nav .open > a:focus .caret {
+  border-top-color: #ffe6d1;
+  border-bottom-color: #ffe6d1;
+}
+.navbar-default .navbar-nav > .dropdown > a .caret {
+  border-top-color: #ecf0f1;
+  border-bottom-color: #ecf0f1;
+}
+.navbar-default .navbar-nav > .dropdown > a:hover .caret, .navbar-default .navbar-nav > .dropdown > a:focus .caret {
+  border-top-color: #ffe6d1;
+  border-bottom-color: #ffe6d1;
+}
+.navbar-default .navbar-toggle {
+  border-color: #d35400;
+}
+.navbar-default .navbar-toggle:hover, .navbar-default .navbar-toggle:focus {
+  background-color: #d35400;
+}
+.navbar-default .navbar-toggle .icon-bar {
+  background-color: #ecf0f1;
+}
+
+@media (max-width: 767px) {
+  .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+    color: #ecf0f1;
+  }
+  .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover, .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+    color: #ffe6d1;
+    background-color: #d35400;
+  }
+}
+
+a.solink {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  text-align: center;
+  background: #f3f5f6;
+  color: #cfd6d9;
+  border: 1px solid #cfd6d9;
+  line-height: 30px;
+  text-decoration: none;
+  transition: all .3s;
+  z-index: 999;
+}
+
+a.solink::first-letter {
+  text-transform: capitalize;
+}
+
+a.solink:hover {
+  color: #428bca;
+}
+        form {
+            display: none;
+        }
+        
+        #playset_iframe_container {
+            width: 100%;
+        }
+        
+        #playset_iframe_container iframe {
+            width: 100%;
+        }
+        
+        .sidebar {
+            background-color: #000;
+            color:#FFF;
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            width: 200px;
+        }
+        
+        .container {
+            min-height: 100%;
+            position: relative;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+        
+        * {
+            border-radius: 0 !important;
+        }
+        
+        nav {
+            margin-bottom: 0 !important;
+        }
+        
+        .hide {
+            display: none !important;
+        }
+        
+        textarea {
+            width: 90%;
+            height: 200px;
+        }
+        
+        .change_playset_data {
+            display: none;
+            width: 100%;
+        }
+        iframe {
+            border:0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>                        
+      </button>
+                <a class="navbar-brand" href="/">QueryPlayground: Because querying data should be fun</a>
+            </div>
+            <div class="collapse navbar-collapse" id="myNavbar">
+                <ul class="nav navbar-nav">
+                    <li><a href="#/create_playset">Create a playset</a></li>
+                </ul>
+                <ul class="nav navbar-nav navbar-right">
+                    <li id="login_buttons"><a href="#">Login/sign up with <i class="fa fa-github"></i>Github</a></li>
+                    <li id="logout_buttons"><a href="#/logout">Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="col-xs-4 sidebar">
+
+
+
+            <h3>Playsets</h3>
+            <ul id="playsets"></ul>
+
+        </div>
+        <div id="main">
+            <!-- LOGIN -->
+        <form id="frmLogin" role="form">
+            <h2>Login</h2>
+
+            <div class="form-group">
+                <label for="txtEmail">Email address</label>
+                <input type="email" class="form-control" id="txtEmail" placeholder="Enter email" name="email" />
+            </div>
+            <div class="form-group">
+                <label for="txtPass">Password</label>
+                <input type="password" class="form-control" id="txtPass" placeholder="Password" name="password" />
+            </div>
+            <button type="submit" class="btn btn-default btn-block">Login</button>
+            <br />
+            <br />
+            <h4>Login with</h4>
+            <a href="#" class="btn btn-primary bt-social" data-provider="facebook">Facebook</a>
+            <a href="#" class="btn btn-info bt-social" data-provider="twitter">Twitter</a>
+
+            <!-- <a href="#" class="btn btn-danger bt-social" data-provider="google">Google+</a> --><a href="#" class="btn btn-default bt-social" data-provider="github">GitHub</a>
+            <a href="#" class="btn btn-warning" id="btAnon">Anon</a>
+
+        </form>
+        <!-- / LOGIN -->
+        <!-- LOGOUT -->
+        <form id="frmLogout" role="form">
+            <h2>You are logged out!</h2>
+
+        </form>
+        <!-- / LOGOUT -->
+        <!-- REGISTER -->
+        <form id="frmRegister" role="form">
+            <h2>Register</h2>
+
+            <div class="form-group">
+                <label for="txtRegEmail">Email address</label>
+                <input type="email" class="form-control" id="txtEmail" placeholder="Enter email" name="email" />
+            </div>
+            <div class="form-group">
+                <label for="txtRegPass">Password</label>
+                <input type="password" class="form-control" id="txtPass" placeholder="Password" name="password" />
+            </div>
+            <button type="submit" class="btn btn-default">Register</button>
+        </form>
+        <!-- / REGISTER -->
+        <!-- PROFILE -->
+        <form id="frmProfile" role="form">
+            <h2>Profile</h2>
+
+            <br />
+            <div class="form-group">
+                <label for="txtName">Name</label>
+                <input type="text" class="form-control" id="txtName" placeholder="Name" name="name" />
+            </div>
+            <div class="form-group">
+                <label for="ddlDino">Favorite Dinosaur</label>
+                <select id="ddlDino" name="favoriteDinosaur" class="form-control">
+                <option>None</option>
+                <option>Pteranodon</option>
+                <option>Lambeosaurus</option>
+                <option>Stegosaurus</option>
+                <option>Daspletosaurus</option>
+            </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+        <!-- / PROFILE -->
+        <hr />
+        <!-- ALERT BOX -->
+        <div id="alert" class="alert" role="alert" style="display:none">
+            <h4 id="alert-title">You are not logged in</h4>
+
+            <p id="alert-detail"></p>
+        </div>
+
+            <div id="playset_container">
+                <h2 id="playset_name" data-column="name" class="playset_data"></h2>
+                <input data-column="name" id="change_playset_name" class="change_playset_data" />
+                <pre id="playset_code" data-column="code" class="playset_data"></pre>
+                <textarea data-column="code" id="change_playset_code" class="change_playset_data"></textarea>
+                <div id="playset_iframe_container"></div>
+                <input type="button" id="delete_playset" value="Delete playset" />
+            </div>
+            <form id="create_playset_form">
+                <strong>Name:</strong> <input type="text" id="playset_name_input" /><br/>
+                <strong>Code:</strong> <textarea id="playset_code_input"></textarea>
+                <br/>
+                <input type="button" id="save_playset" value="Save playset" />
+            </form>
+
+        </div>
+    </div>
+    <!-- Put just before closing body tag so pages load faster -->
+    <!-- Obtain jquery javascript library from CDN -->
+    <!-- Check http://code.jquery.com/ for latest version. -->
+    <!-- Obtain Bootstrap javascript library from CDN (online service) so it doesn't have to be on my machine -->
+    <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    
+</body>
+
+</html>
