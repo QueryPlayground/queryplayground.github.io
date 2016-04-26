@@ -265,27 +265,7 @@ function dataset_statuses(item) {
     html += '</table>';
     item.append(html);
 }
-$('body').on('click', '.copy', function() {
-	console.log('copying');
-  $(this).text(decodeURI($(this).attr('data-copy-this')));
-  var range = document.createRange();  
-  range.selectNode($(this));  
-  window.getSelection().addRange(range);  
 
-  try {  
-    // Now that we've selected the anchor text, execute the copy command  
-    var successful = document.execCommand('copy');  
-    var msg = successful ? 'successful' : 'unsuccessful';  
-    console.log('Copy email command was ' + msg);  
-  } catch(err) {  
-    console.log('Oops, unable to copy');  
-  }  
-
-  // Remove the selections - NOTE: Should use
-  // removeRange(range) when it is supported  
-  window.getSelection().removeAllRanges();  
-  //$(this).text('');
-})
 function handleSODAPlayground() {
   $.each($('.sodaplayground'), function(item) {
     item = $(this);
@@ -417,7 +397,27 @@ $.fn.popover.Constructor.prototype.leave = function(obj){
     })
     setTimeout(function(){handleSimpleCount();
     handleSimpleCountsSum();handleSODAPlayground();},1000)
-    
+    $('body').on('click', '.copy', function() {
+	console.log('copying');
+  $(this).text(decodeURI($(this).attr('data-copy-this')));
+  var range = document.createRange();  
+  range.selectNode($(this));  
+  window.getSelection().addRange(range);  
+
+  try {  
+    // Now that we've selected the anchor text, execute the copy command  
+    var successful = document.execCommand('copy');  
+    var msg = successful ? 'successful' : 'unsuccessful';  
+    console.log('Copy email command was ' + msg);  
+  } catch(err) {  
+    console.log('Oops, unable to copy');  
+  }  
+
+  // Remove the selections - NOTE: Should use
+  // removeRange(range) when it is supported  
+  window.getSelection().removeAllRanges();  
+  //$(this).text('');
+})
     
     
 
