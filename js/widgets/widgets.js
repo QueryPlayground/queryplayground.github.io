@@ -266,6 +266,7 @@ function dataset_statuses(item) {
     item.append(html);
 }
 $('body').on('click', '.copy', function() {
+	console.log('copying');
   $(this).text(decodeURI($(this).attr('data-copy-this')));
   var range = document.createRange();  
   range.selectNode($(this));  
