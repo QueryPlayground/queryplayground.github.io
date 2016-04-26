@@ -414,7 +414,7 @@ function main() {
         handleSimpleCountsSum();
         handleSODAPlayground();
     }, 1000)
-    $('document').on('click', '.copythis', function() {
+    $(document.body).on('click', '.copythis', function() {
         console.log('copying');
         $(this).next().text(decodeURI($(this).attr('data-copy-this')));
         var range = document.createRange();
