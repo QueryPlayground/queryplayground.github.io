@@ -605,8 +605,12 @@ a.solink:hover {
         }
         iframe {
             border:0;
+            height:100%;
         }
         #delete_playset {
+            display:none;
+        }
+        #metadata_container {
             display:none;
         }
     </style>
@@ -722,12 +726,14 @@ a.solink:hover {
         </div>
 
             <div id="playset_container">
+                <div id="metadata_container">
                 <h2 id="playset_name" data-column="name" class="playset_data"></h2>
                 <input data-column="name" id="change_playset_name" class="change_playset_data" />
                 <pre id="playset_code" data-column="code" class="playset_data"></pre>
                 <textarea data-column="code" id="change_playset_code" class="change_playset_data"></textarea>
-                <div id="playset_iframe_container"></div>
                 <input type="button" id="delete_playset" value="Delete playset" />
+                <div id="playset_iframe_container"></div>
+                </div>
             </div>
             <form id="create_playset_form">
                 <strong>Name:</strong> <input type="text" id="playset_name_input" /><br/>
