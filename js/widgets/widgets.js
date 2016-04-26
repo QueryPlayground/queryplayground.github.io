@@ -339,6 +339,7 @@ function handleSODAPlayground() {
       	var htmlToCopy = $(this)[0].outerHTML;
       	var copyHtml = '<i class="fa fa-clipboard copy" data-copy-this="'+encodeURI(htmlToCopy)+'"></i>';
       	item.append('<h3>'+heading+infoHtml+copyHtml+'</h3>');
+      	
     } catch (e) {
       console.log(e);
     }
