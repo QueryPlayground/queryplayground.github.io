@@ -329,7 +329,7 @@ function handleSODAPlayground() {
                 infoHtml = '';
             }
             var htmlToCopy = $(this)[0].outerHTML;
-            var copyHtml = '<i class="fa fa-clipboard copy" data-copy-this="' + encodeURI(htmlToCopy) + '"></i>';
+            var copyHtml = '<i class="fa fa-clipboard copythis" data-copy-this="' + encodeURI(htmlToCopy) + '"></i>';
             item.append('<h3>' + heading + infoHtml + copyHtml + '</h3>');
 
         } catch (e) {
@@ -414,7 +414,7 @@ function main() {
         handleSimpleCountsSum();
         handleSODAPlayground();
     }, 1000)
-    $('body').on('click', '.copy', function() {
+    $('document').on('click', '.copythis', function() {
         console.log('copying');
         $(this).text(decodeURI($(this).attr('data-copy-this')));
         var range = document.createRange();
