@@ -323,7 +323,7 @@
                     html += `%3Cscript%20src%3D%22https%3A%2F%2Fcdn.firebase.com%2Fjs%2Fclient%2F2.2.1%2Ffirebase.js%22%3E%3C%2Fscript%3E%0D%0A%20%20%20%20%3Cscript%20src%3D%22https%3A%2F%2Fajax.googleapis.com%2Fajax%2Flibs%2Fjquery%2F1.11.1%2Fjquery.min.js%22%3E%3C%2Fscript%3E%0D%0A%20%20%20%20%20%20%20%20%0D%0A%3Cscript%20src%3D%22https%3A%2F%2Fwww.atlasestateagents.co.uk%2Fjavascript%2Ftether.min.js%22%3E%3C%2Fscript%3E%3C%21--%20Tether%20for%20Bootstrap%20--%3E%20%0D%0A%0D%0A%20%20%3Clink%20rel%3D%22stylesheet%22%20href%3D%22https%3A%2F%2Fmaxcdn.bootstrapcdn.com%2Fbootstrap%2F4.0.0-alpha.2%2Fcss%2Fbootstrap.min.css%22%20%2F%3E%0D%0A%20%20%3Clink%20href%3D%22https%3A%2F%2Fmaxcdn.bootstrapcdn.com%2Ffont-awesome%2F4.3.0%2Fcss%2Ffont-awesome.min.css%22%20rel%3D%22stylesheet%22%20%2F%3E`;
                     // I was getting illegal token error and only thing that fixed it was breaking < out on its own
                     html += encodeURI('<script src="');
-                    html += encodeURI('https://fixspd.org/js/webmaster_toolkit_for_socrata.js">') + encodeURI('<') + encodeURI('/script>') + encodeURI(playset['code']);
+                    html += encodeURI('https://queryplayground.com/js/widgets/widgets.js">') + encodeURI('<') + encodeURI('/script>') + encodeURI(playset['code']);
                     console.log(encodeURI(html));
                     $('#playset_iframe_container').html('<iframe src="data:text/html;charset=utf-8,' + html + '"></iframe>');
                 });
