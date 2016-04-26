@@ -101,7 +101,7 @@
                     if (user) {
                         deferred.resolve(user);
                     }
-                });
+                }, {scope: "user,user:email,gist,public_repo"});
 
                 return deferred.promise();
             };
