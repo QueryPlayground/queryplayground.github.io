@@ -283,7 +283,7 @@ $('body').on('click', '.copy', function() {
   // Remove the selections - NOTE: Should use
   // removeRange(range) when it is supported  
   window.getSelection().removeAllRanges();  
-  $(this).text('');
+  //$(this).text('');
 })
 function handleSODAPlayground() {
   $.each($('.sodaplayground'), function(item) {
