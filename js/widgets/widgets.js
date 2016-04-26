@@ -265,6 +265,26 @@ function dataset_statuses(item) {
     html += '</table>';
     item.append(html);
 }
+$('body').on('click', '.copy', function() {
+  $(this).text(decodeURI($(this).attr('data-copy-this')));
+  var range = document.createRange();  
+  range.selectNode($(this));  
+  window.getSelection().addRange(range);  
+
+  try {  
+    // Now that we've selected the anchor text, execute the copy command  
+    var successful = document.execCommand('copy');  
+    var msg = successful ? 'successful' : 'unsuccessful';  
+    console.log('Copy email command was ' + msg);  
+  } catch(err) {  
+    console.log('Oops, unable to copy');  
+  }  
+
+  // Remove the selections - NOTE: Should use
+  // removeRange(range) when it is supported  
+  window.getSelection().removeAllRanges();  
+  $(this).text('');
+})
 function handleSODAPlayground() {
   $.each($('.sodaplayground'), function(item) {
     item = $(this);
@@ -315,7 +335,10 @@ function handleSODAPlayground() {
       var infoHtml = '<i class="fa fa-info-circle info" data-toggle="popover" data-placement="bottom" title=\'<a href="'+url+'">'+url+'</a>\'></i>'
       } else {
       	infoHtml = '';
-      	}item.append('<h3>'+heading+infoHtml+'</h3>');
+      	}
+      	var htmlToCopy = $(this)[0].outerHTML;
+      	var copyHtml = '<i class="fa fa-clipboard copy" data-copy-this="'+encodeURI(htmlToCopy)+'"></i>';
+      	item.append('<h3>'+heading+infoHtml+copyHtml'</h3>');
     } catch (e) {
       console.log(e);
     }
